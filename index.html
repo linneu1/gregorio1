@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poder da Água</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #071b12;
+    color: white;
+    overflow-x: hidden;
+}
+
+header {
+    text-align: center;
+    padding: 15px;
+    background: linear-gradient(90deg, #063b2b, #087f5b, #063b2b);
+    border-bottom: 3px solid #42f5b3;
+}
+
+h1 {
+    font-size: 36px;
+    color: #5fffd0;
+    text-shadow: 0 0 15px #00ffae;
+}
+
+header p {
+    margin-top: 5px;
+    color: #d7fff3;
+}
+
+#game {
+    position: relative;
+    max-width: 1100px;
+    height: 650px;
+    margin: 20px auto;
+    overflow: hidden;
+    border: 4px solid #42f5b3;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 20% 20%, #3c9b4b 0 4%, transparent 5%),
+        radial-gradient(circle at 80% 30%, #25713b 0 5%, transparent 6%),
+        linear-gradient(#103e29 0%, #0b5b35 55%, #06351f 100%);
+    box-shadow: 0 0 30px #00ff9d;
+}
+
+/* árvores */
+.tree {
+    position: absolute;
+    width: 100px;
+    height: 220px;
+    bottom: 60px;
+}
+
+.tree::before {
+    content: "";
+    position: absolute;
+    left: 42px;
+    top: 80px;
+    width: 25px;
+    height: 140px;
+    background: #5b321b;
+    border-radius: 10px;
+}
+
+.tree::after {
+    content: "🌳";
+    position: absolute;
+    font-size: 110px;
+    top: -10px;
+}
+
+.t1 { left: 10px; }
+.t2 { right: 10px; }
+.t3 { left: 280px; transform: scale(.7); }
+.t4 { right: 280px; transform: scale(.8); }
+
+.ground {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 90px;
+    background: #06331f;
+    border-top: 4px solid #159447;
+}
+
+/* HUD */
+#hud {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 85%;
+    display: flex;
+    justify-content: space-between;
+    z-index: 5;
+}
+
+.status {
+    width: 40%;
+    background: rgba(0,0,0,.65);
+    padding: 10px;
+    border-radius: 12px;
+    border: 2px solid white;
+}
+
+.name {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.health {
+    height: 20px;
+    background: #401010;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.health-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #00ff66, #aaff00);
+    transition: width .4s;
+}
+
+/* personagens */
+.character {
+    position: absolute;
+    bottom: 100px;
+    width: 150px;
+    height: 180px;
+    z-index: 4;
+    text-align: center;
+    transition: .3s;
+}
+
+#player {
+    left: 120px;
+}
+
+#enemy {
+    right: 120px;
+}
+
+.avatar {
+    font-size: 100px;
+    filter: drop-shadow(0 0 12px #fff);
+}
+
+.character .label {
+    background: rgba(0,0,0,.6);
+    border-radius: 10px;
+    padding: 5px;
+}
+
+/* poderes */
+#powers {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.power {
+    width: 130px;
+    height: 65px;
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: .2s;
+    box-shadow: 0 5px 12px rgba(0,0,0,.5);
+}
+
+.power:hover {
+    transform: translateY(-5px) scale(1.05);
+}
+
+.power:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.fire { background: linear-gradient(#ff5c22,#b91400); }
+.water { background: linear-gradient(#25cfff,#0750c9); }
+.wind { background: linear-gradient(#b8fff4,#188d82); }
+.meteor { background: linear-gradient(#ff5a00,#710000); }
+
+/* efeitos */
+.projectile {
+    position: absolute;
+    z-index: 20;
+    font-size: 50px;
+    pointer-events: none;
+}
+
+.damage {
+    position: absolute;
+    z-index: 30;
+    font-size: 30px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 10px red;
+    animation: damage 1s forwards;
+}
+
+@keyframes damage {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-70px) scale(1.4); opacity: 0; }
+}
+
+.shake {
+    animation: shake .35s;
+}
+
+@keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-12px); }
+    75% { transform: translateX(12px); }
+}
+
+#message {
+    position: absolute;
+    top: 115px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,.75);
+    padding: 12px 25px;
+    border-radius: 20px;
+    font-size: 20px;
+    z-index: 20;
+    text-align: center;
+}
+
+#startScreen {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    background: rgba(2,20,13,.94);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+#startScreen h2 {
+    font-size: 42px;
+    color: #57ffd0;
+    margin-bottom: 10px;
+}
+
+#startScreen p {
+    max-width: 600px;
+    margin: 8px;
+    line-height: 1.5;
+}
+
+#startBtn, #restartBtn {
+    margin-top: 20px;
+    padding: 15px 35px;
+    border: none;
+    border-radius: 15px;
+    background: #00c987;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#restartBtn {
+    display: none;
+}
+
+#victory {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 90;
+    background: rgba(0,0,0,.75);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+#victory h2 {
+    font-size: 55px;
+    color: #ffe600;
+    text-shadow: 0 0 20px orange;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🌊 PODER DA ÁGUA 🌊</h1>
+    <p>Um jogo criado por <strong>Gregório — 1º B</strong></p>
+</header>
+
+<div id="game">
+
+    <div class="tree t1"></div>
+    <div class="tree t2"></div>
+    <div class="tree t3"></div>
+    <div class="tree t4"></div>
+    <div class="ground"></div>
+
+    <div id="hud">
+        <div class="status">
+            <div class="name">🌊 Herói da Água</div>
+            <div class="health">
+                <div id="playerHealth" class="health-bar"></div>
+            </div>
+            <small id="playerHP">100 / 100</small>
+        </div>
+
+        <div class="status">
+            <div class="name">🔥 Guardião do Fogo</div>
+            <div class="health">
+                <div id="enemyHealth" class="health-bar"></div>
+            </div>
+            <small id="enemyHP">100 / 100</small>
+        </div>
+    </div>
+
+    <div id="message">
+        Escolha um poder para atacar!
+    </div>
+
+    <div id="player" class="character">
+        <div class="avatar">🧙‍♂️</div>
+        <div class="label">💧 Aquarion</div>
+    </div>
+
+    <div id="enemy" class="character">
+        <div class="avatar">🧙‍♀️</div>
+        <div class="label">🔥 Ignara</div>
+    </div>
+
+    <div id="powers">
+
+        <button class="power fire" onclick="attack('fire')">
+            🔥 Chama
+        </button>
+
+        <button class="power water" onclick="attack('water')">
+            🌊 Onda Gigante
+        </button>
+
+        <button class="power wind" onclick="attack('wind')">
+            🌪️ Tornado
+        </button>
+
+        <button class="power meteor" onclick="attack('meteor')">
+            ☄️ METEORO
+        </button>
+
+    </div>
+
+    <div id="startScreen">
+        <h2>🌳 Floresta Mágica 🌳</h2>
+        <p>
+            Quatro elementos despertaram na floresta!
+            Use seus poderes para derrotar o oponente.
+        </p>
+        <p>
+            🔥 Fogo • 🌊 Água • 🌪️ Ar • 🌱 Terra
+        </p>
+        <p>
+            E cuidado com o poder secreto... ☄️ <strong>METEORO!</strong>
+        </p>
+        <button id="startBtn" onclick="startGame()">
+            ⚔️ COMEÇAR BATALHA
+        </button>
+    </div>
+
+    <div id="victory">
+        <h2 id="victoryTitle">🏆 VITÓRIA!</h2>
+        <p id="victoryText">Você dominou os elementos!</p>
+        <button id="restartBtn" onclick="restartGame()">
+            🔄 Jogar novamente
+        </button>
+    </div>
+
+</div>
+
+<script>
+let playerHP = 100;
+let enemyHP = 100;
+let gameStarted = false;
+let busy = false;
+
+const attacks = {
+    fire: {
+        name: "Chama",
+        emoji: "🔥",
+        damage: 12
+    },
+
+    water: {
+        name: "Onda Gigante",
+        emoji: "🌊",
+        damage: 20
+    },
+
+    wind: {
+        name: "Tornado",
+        emoji: "🌪️",
+        damage: 15
+    },
+
+    meteor: {
+        name: "METEORO",
+        emoji: "☄️",
+        damage: 35
+    }
+};
+
+function startGame() {
+    document.getElementById("startScreen").style.display = "none";
+    gameStarted = true;
+
+    showMessage("⚔️ A batalha começou! Escolha seu poder!");
+}
+
+function attack(type) {
+
+    if (!gameStarted || busy || enemyHP <= 0 || playerHP <= 0)
+        return;
+
+    busy = true;
+
+    const power = attacks[type];
+
+    showMessage(power.emoji + " Você usou " + power.name + "!");
+
+    createProjectile(type);
+
+    setTimeout(() => {
+
+        let damage = power.damage;
+
+        // Chance de ataque crítico
+        if (Math.random() < 0.2) {
+            damage *= 2;
+            showMessage("💥 ATAQUE CRÍTICO!");
+        }
+
+        enemyHP -= damage;
+
+        if (enemyHP < 0)
+            enemyHP = 0;
+
+        updateHealth();
+
+        showDamage(damage, "enemy");
+
+        document.getElementById("enemy").classList.add("shake");
+
+        setTimeout(() => {
+            document.getElementById("enemy").classList.remove("shake");
+        }, 350);
+
+        if (enemyHP <= 0) {
+            win();
+            return;
+        }
+
+        setTimeout(enemyAttack, 900);
+
+    }, 500);
+}
+
+function enemyAttack() {
+
+    if (enemyHP <= 0 || playerHP <= 0)
+        return;
+
+    const possibleAttacks = [
+        { name: "Bola de Fogo", emoji: "🔥", damage: 10 },
+        { name: "Explosão Elemental", emoji: "💥", damage: 15 },
+        { name: "Raio Mágico", emoji: "⚡", damage: 12 },
+        { name: "Meteoro", emoji: "☄️", damage: 25 }
+    ];
+
+    const attack =
+        possibleAttacks[
+            Math.floor(Math.random() * possibleAttacks.length)
+        ];
+
+    showMessage(
+        "🔥 O inimigo usou " +
+        attack.emoji +
+        " " +
+        attack.name +
+        "!"
+    );
+
+    setTimeout(() => {
+
+        playerHP -= attack.damage;
+
+        if (playerHP < 0)
+            playerHP = 0;
+
+        updateHealth();
+
+        showDamage(attack.damage, "player");
+
+        document.getElementById("player").classList.add("shake");
+
+        setTimeout(() => {
+            document.getElementById("player").classList.remove("shake");
+        }, 350);
+
+        if (playerHP <= 0) {
+            lose();
+            return;
+        }
+
+        busy = false;
+
+    }, 500);
+}
+
+function createProjectile(type) {
+
+    const projectile = document.createElement("div");
+
+    projectile.className = "projectile";
+
+    projectile.textContent = attacks[type].emoji;
+
+    projectile.style.left = "270px";
+    projectile.style.bottom = "230px";
+
+    document.getElementById("game").appendChild(projectile);
+
+    let position = 270;
+
+    const interval = setInterval(() => {
+
+        position += 15;
+
+        projectile.style.left = position + "px";
+
+        if (position > 800) {
+            clearInterval(interval);
+            projectile.remove();
+        }
+
+    }, 20);
+}
+
+function showDamage(amount, target) {
+
+    const damage = document.createElement("div");
+
+    damage.className = "damage";
+
+    damage.textContent = "-" + amount;
+
+    if (target === "enemy") {
+        damage.style.right = "190px";
+        damage.style.top = "280px";
+    } else {
+        damage.style.left = "190px";
+        damage.style.top = "280px";
+    }
+
+    document.getElementById("game").appendChild(damage);
+
+    setTimeout(() => {
+        damage.remove();
+    }, 1000);
+}
+
+function updateHealth() {
+
+    document.getElementById("playerHealth").style.width =
+        playerHP + "%";
+
+    document.getElementById("enemyHealth").style.width =
+        enemyHP + "%";
+
+    document.getElementById("playerHP").textContent =
+        playerHP + " / 100";
+
+    document.getElementById("enemyHP").textContent =
+        enemyHP + " / 100";
+}
+
+function showMessage(text) {
+    document.getElementById("message").textContent = text;
+}
+
+function win() {
+
+    busy = true;
+
+    document.getElementById("victory").style.display = "flex";
+
+    document.getElementById("victoryTitle").textContent =
+        "🏆 VOCÊ VENCEU!";
+
+    document.getElementById("victoryText").textContent =
+        "🌊 Aquarion dominou os elementos e derrotou o Guardião do Fogo!";
+}
+
+function lose() {
+
+    busy = true;
+
+    document.getElementById("victory").style.display = "flex";
+
+    document.getElementById("victoryTitle").textContent =
+        "💀 VOCÊ PERDEU!";
+
+    document.getElementById("victoryText").textContent =
+        "🔥 O Guardião do Fogo venceu desta vez. Tente novamente!";
+}
+
+function restartGame() {
+
+    playerHP = 100;
+    enemyHP = 100;
+    busy = false;
+    gameStarted = true;
+
+    updateHealth();
+
+    document.getElementById("victory").style.display = "none";
+
+    showMessage("⚔️ Nova batalha! Escolha seu poder!");
+}
+</script>
+
+</body>
+</html>
